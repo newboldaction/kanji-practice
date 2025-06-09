@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>漢字練習シート作成ツール</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Yuji+Syuku&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* アプリ全体のフォント設定 */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* 練習シート用のフォント設定 */
+        .practice-font {
+            font-family: 'Yuji Syuku', serif;
+        }
+
+        /* 練習用のマス目 */
+        .practice-grid-cell {
+            border: 1px solid #d1d5db; /* 枠線 */
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            aspect-ratio: 1 / 1; /* 正方形を維持 */
+            background-color: white;
+        }
+
+        /* マス目の中の補助線 */
+        .practice-grid-cell::before,
+        .practice-grid-cell::after {
+            content: '';
+            position: absolute;
+            background-color: #d1d5db; /* 補助線の色 */
+            opacity: 0.6;
+        }
+
+        /* 縦の補助線 */
+        .practice-grid-cell::before {
+            width: 1px;
+            height: 100%;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-style: dashed;
+            border-left: 1px dashed #d1d5db;
+        }
+
+        /* 横の補助線 */
+        .practice-grid-cell::after {
+            height: 1px;
+            width: 100%;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            border-style: dashed;
+            border-top: 1px dashed #d1d5db;
+
+        }
+
+        /* 印刷時のスタイル */
+        @media print {
+            /* 印刷時に非表示にする要素 */
+            .no-print {
+                display: none !important;
+            }
+            /* 印刷するエリアの設定 */
+            #printable-area {
+                display: block !important;
+                width: 100%;
+                height: 100%;
+                position: absolute;
+                top: 0;
+                left: 0;
+                margin: 0;
+                padding: 1cm; /* 印刷時の余白 */
+                box-shadow: none;
+                border: none;
+            }
+            /* 印刷時の文字色を黒にする */
+            .print-text-black {
+                color: #000 !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-4xl">
+
+        <!-- ヘッダー部分 -->
+        <header class="text-center mb-8 no-print">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">漢字練習シート作成ツール</h1>
+            <p class="mt-2 text-gray-600">お名前を入力して、オリジナルの練習シートを作成・印刷できます。</p>
+        </header>
+
+        <!-- 設定部分 -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8 no-print">
+            <div class="mb-4">
+                <label for="nameInput" class="block text-lg font-semibold mb-2 text-gray-700">練習したい氏名を入力してください</label>
+                <input type="text" id="nameInput" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="例：山田 太郎">
+            </div>
+            <button id="generateButton" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-md hover:bg-blue-700 transition duration-300">
+                練習シートを作成する
+            </button>
+        </div>
+        
+        <!-- 印刷プレビューエリア -->
+        <div id="preview-container" class="hidden no-print">
+             <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">プレビュー</h2>
+                <button id="printButton" class="bg-green-600 text-white font-bold py-2 px-6 rounded-md hover:bg-green-700 transition duration-300">
+                    このシートを印刷
+                </button>
+            </div>
+        </div>
+
+        <!-- 印刷用シート -->
+        <div id="printable-area" class="hidden bg-white p-8 rounded-lg shadow-lg">
+            <h2 class="text-3xl font-bold text-center mb-6 practice-font print-text-black">漢字練習</h2>
+            
+            <!-- お手本セクション -->
+            <div class="mb-8">
+                <p class="text-xl mb-3 practice-font print-text-black">お手本</p>
+                <div id="model-grid" class="grid grid-cols-10 gap-1">
+                    <!-- JavaScriptでお手本の文字がここに追加されます -->
+                </div>
+            </div>
+
+            <!-- なぞり書きセクション -->
+            <div class="mb-8">
+                <p class="text-xl mb-3 practice-font print-text-black">なぞって練習</p>
+                <div id="tracing-grid" class="grid grid-cols-10 gap-1">
+                    <!-- JavaScriptでなぞり書き用の文字がここに追加されます -->
+                </div>
+            </div>
+            
+            <!-- 見て書く練習セクション -->
+            <div>
+                <p class="text-xl mb-3 practice-font print-text-black">みて練習</p>
+                <div id="practice-grid" class="grid grid-cols-10 gap-1">
+                    <!-- JavaScriptで空のマスがここに追加されます -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // DOM要素の取得
+        const nameInput = document.getElementById('nameInput');
+        const generateButton = document.getElementById('generateButton');
+        const printButton = document.getElementById('printButton');
+        const printableArea = document.getElementById('printable-area');
+        const previewContainer = document.getElementById('preview-container');
+        
+        const modelGrid = document.getElementById('model-grid');
+        const tracingGrid = document.getElementById('tracing-grid');
+        const practiceGrid = document.getElementById('practice-grid');
+
+        // 「練習シートを作成する」ボタンのクリックイベント
+        generateButton.addEventListener('click', () => {
+            const name = nameInput.value.trim().replace(/\s/g, ''); // 空白を除去
+            if (name === '') {
+                // カスタムの警告メッセージはまだ実装していません。
+                // alertの代わりにモーダルダイアログなどを表示するのが望ましいです。
+                // 今回はネイティブのalertを使用します。
+                alert('氏名を入力してください。');
+                return;
+            }
+
+            // グリッドをクリア
+            modelGrid.innerHTML = '';
+            tracingGrid.innerHTML = '';
+            practiceGrid.innerHTML = '';
+
+            const nameLength = name.length;
+            
+            // 1. お手本グリッドの生成
+            for (let i = 0; i < 10; i++) {
+                const char = name[i] || ''; // 10文字まで対応
+                const cell = document.createElement('div');
+                cell.className = 'practice-grid-cell';
+                const charSpan = document.createElement('span');
+                charSpan.className = 'text-5xl practice-font print-text-black';
+                charSpan.textContent = char;
+                cell.appendChild(charSpan);
+                modelGrid.appendChild(cell);
+            }
+
+            // 2. なぞり書きグリッドの生成 (3行)
+            for (let row = 0; row < 3; row++) {
+                for (let i = 0; i < 10; i++) {
+                    const char = name[i] || '';
+                    const cell = document.createElement('div');
+                    cell.className = 'practice-grid-cell';
+                    const charSpan = document.createElement('span');
+                    // 文字を薄く表示してなぞりやすくする
+                    charSpan.className = 'text-5xl practice-font text-gray-300 print-text-black';
+                    charSpan.textContent = char;
+                    cell.appendChild(charSpan);
+                    tracingGrid.appendChild(cell);
+                }
+            }
+
+            // 3. 練習グリッドの生成 (5行)
+            for (let i = 0; i < 50; i++) {
+                 const cell = document.createElement('div');
+                 cell.className = 'practice-grid-cell';
+                 practiceGrid.appendChild(cell);
+            }
+
+            // プレビューと印刷ボタンを表示
+            printableArea.classList.remove('hidden');
+            previewContainer.classList.remove('hidden');
+        });
+
+        // 「このシートを印刷」ボタンのクリックイベント
+        printButton.addEventListener('click', () => {
+            window.print();
+        });
+    </script>
+</body>
+</html>
