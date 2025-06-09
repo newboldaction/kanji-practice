@@ -216,9 +216,15 @@
             }
 
             // 3. 練習グリッドの生成 (5行)
+            // 空のマスにも文字マスと同じ構造のspanを追加してサイズを統一
             for (let i = 0; i < 50; i++) {
                  const cell = document.createElement('div');
                  cell.className = 'practice-grid-cell';
+                 const charSpan = document.createElement('span');
+                 charSpan.className = 'text-5xl practice-font';
+                 // 中身がなくても高さを維持するためにスペースを入れる
+                 charSpan.innerHTML = '&nbsp;';
+                 cell.appendChild(charSpan);
                  practiceGrid.appendChild(cell);
             }
 
