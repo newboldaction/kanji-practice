@@ -84,6 +84,10 @@
             .print-text-black {
                 color: #000 !important;
             }
+            /* 印刷時になぞり書き用の薄いグレーの文字色を設定 */
+            .print-text-light-gray {
+                color: #d1d5db !important;
+            }
         }
     </style>
 </head>
@@ -198,8 +202,8 @@
                     const cell = document.createElement('div');
                     cell.className = 'practice-grid-cell';
                     const charSpan = document.createElement('span');
-                    // 文字を薄く表示してなぞりやすくする
-                    charSpan.className = 'text-5xl practice-font text-gray-300 print-text-black';
+                    // 文字を薄く表示し、印刷時も薄いグレーになるようにクラスを指定
+                    charSpan.className = 'text-5xl practice-font text-gray-300 print-text-light-gray';
                     charSpan.textContent = char;
                     cell.appendChild(charSpan);
                     tracingGrid.appendChild(cell);
